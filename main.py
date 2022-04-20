@@ -1,4 +1,3 @@
-import sys
 import urllib.request
 import logging
 import threading
@@ -39,7 +38,7 @@ def main():
     'https://www.barkerandstonehouse.co.uk/clearance/store-clearance/metro-retail-park-clearance?product_list_limit=all',
     'https://www.barkerandstonehouse.co.uk/clearance/store-clearance/newcastle-clearance?product_list_limit=all',
     'https://www.barkerandstonehouse.co.uk/clearance/store-clearance/nottingham-clearance?product_list_limit=all',
-    #'https://www.barkerandstonehouse.co.uk/clearance/store-clearance/teesside-park-clearance?product_list_limit=all',
+    'https://www.barkerandstonehouse.co.uk/clearance/store-clearance/teesside-park-clearance?product_list_limit=all',
     ]
 
     oldpricearray = np.array([])
@@ -57,29 +56,39 @@ def main():
         #time.sleep(0.5)
         page_soup = soup(page_html, "html.parser")
 
-        for price in page_soup.find_all('div', class_= "clearance-store-header__title",):
-            storenametemp = price.get_text('')
+        if len(page_soup.find_all('span', class_= "old-price",)) ==\
+            len(page_soup.find_all('span', class_= "special-price",)) ==\
+            len(page_soup.find_all('a', class_= "product-item-link",)) ==\
+            len(page_soup.find_all('a', class_= "product-item-link", href=True)) ==\
+            len(page_soup.find_all('img', class_= "product-image-photo")):
 
-        for price in page_soup.find_all('span', class_= "old-price",):
-            #print(price.get_text('').strip('Was £'))
-            oldpricearray = np.append(oldpricearray, price.get_text('').strip('Was £'))
-            storename = np.append(storename, storenametemp)
+            for price in page_soup.find_all('div', class_= "clearance-store-header__title",):
+                storenametemp = price.get_text('')
 
-        for price in page_soup.find_all('span', class_= "special-price",):
-            #print(price.get_text('').strip('Now £'))
-            specialpricearray = np.append(specialpricearray, price.get_text('').strip('Now £'))
+            for price in page_soup.find_all('span', class_= "old-price",):
+                #print(price.get_text('').strip('Was £'))
+                oldpricearray = np.append(oldpricearray, price.get_text('').strip('Was £'))
+                storename = np.append(storename, storenametemp)
 
-        for price in page_soup.find_all('a', class_= "product-item-link",):
-            #print(price.get_text(''))
-            productitemname = np.append(productitemname, price.get_text(''))
+            for price in page_soup.find_all('span', class_= "special-price",):
+                #print(price.get_text('').strip('Now £'))
+                specialpricearray = np.append(specialpricearray, price.get_text('').strip('Now £'))
 
-        for price in page_soup.find_all('a', class_= "product-item-link", href=True):
-            #print(price['href'])
-            productitemlink = np.append(productitemlink, price['href'])
+            for price in page_soup.find_all('a', class_= "product-item-link",):
+                #print(price.get_text(''))
+                productitemname = np.append(productitemname, price.get_text(''))
 
-        for price in page_soup.find_all('img', class_= "product-image-photo"):
-            #print(path_to_image_html(price['src']))
-            productitemphoto = np.append(productitemphoto, path_to_image_html(price['src']))
+            for price in page_soup.find_all('a', class_= "product-item-link", href=True):
+                #print(price['href'])
+                productitemlink = np.append(productitemlink, price['href'])
+
+            for price in page_soup.find_all('img', class_= "product-image-photo"):
+                #print(path_to_image_html(price['src']))
+                productitemphoto = np.append(productitemphoto, path_to_image_html(price['src']))
+
+
+        else:
+            print('Mismatch at ' + url)
 
     print(storename.shape, productitemname.shape, oldpricearray.shape, specialpricearray.shape, productitemphoto.shape, productitemlink.shape)
     #print(page_soup.prettify())
