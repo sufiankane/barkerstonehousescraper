@@ -27,90 +27,149 @@ def main():
     t1 = threading.Thread(target=serverstart, args=(8080,))
     t1.start()
 
-    urls: list[str] = [
-    'https://www.barkerandstonehouse.co.uk/clearance/store-clearance/darlington-clearance?product_list_limit=all',
-    'https://www.barkerandstonehouse.co.uk/clearance/store-clearance/guildford-clearance?product_list_limit=all',
-    'https://www.barkerandstonehouse.co.uk/clearance/store-clearance/hove-clearance?product_list_limit=all',
-    'https://www.barkerandstonehouse.co.uk/clearance/store-clearance/hull-clearance?product_list_limit=all',
-    'https://www.barkerandstonehouse.co.uk/clearance/store-clearance/knaresborough-clearance?product_list_limit=all',
-    'https://www.barkerandstonehouse.co.uk/clearance/store-clearance/leeds-clearance?product_list_limit=all',
-    'https://www.barkerandstonehouse.co.uk/clearance/store-clearance/london-battersea-clearance?product_list_limit=all',
-    'https://www.barkerandstonehouse.co.uk/clearance/store-clearance/metro-retail-park-clearance?product_list_limit=all',
-    'https://www.barkerandstonehouse.co.uk/clearance/store-clearance/newcastle-clearance?product_list_limit=all',
-    'https://www.barkerandstonehouse.co.uk/clearance/store-clearance/nottingham-clearance?product_list_limit=all',
-    'https://www.barkerandstonehouse.co.uk/clearance/store-clearance/teesside-park-clearance?product_list_limit=all',
-    ]
+    while True:
 
-    oldpricearray = np.array([])
-    specialpricearray = np.array([])
-    productitemname = np.array([])
-    productitemlink = np.array([])
-    productitemphoto = np.array([])
-    storename = np.array([])
+        #time.sleep(86400)
 
-    for url in urls:
-        headers = { 'User-Agent' : 'Mozilla/5.0 (Windows NT 6.1; Win64; x64)' }
-        request = urllib.request.Request(url, headers=headers)
-        response = urllib.request.urlopen(request)
-        page_html = response.read()
-        #time.sleep(0.5)
-        page_soup = soup(page_html, "html.parser")
+        urls: list[str] = [
+        'https://www.barkerandstonehouseclearance.co.uk/battersea-clearance-furniture/',
+        'https://www.barkerandstonehouseclearance.co.uk/darlington-clearance-furniture/',
+        #'https://www.barkerandstonehouseclearance.co.uk/guildford-clearance-furniture/',
+        'https://www.barkerandstonehouseclearance.co.uk/hove-clearance-furniture/',
+        'https://www.barkerandstonehouseclearance.co.uk/hull-clearance-furniture/',
+        'https://www.barkerandstonehouseclearance.co.uk/knaresborough-clearance-furniture/',
+        'https://www.barkerandstonehouseclearance.co.uk/leeds-clearance-furniture/',
+        'https://www.barkerandstonehouseclearance.co.uk/metro-clearance-furniture/',
+        'https://www.barkerandstonehouseclearance.co.uk/newcastle-clearance-furniture/',
+        'https://www.barkerandstonehouseclearance.co.uk/nottingham-clearance-furniture/',
+        'https://www.barkerandstonehouseclearance.co.uk/teesside-clearance-furniture/',
+        ]
 
-        if len(page_soup.find_all('span', class_= "old-price",)) ==\
-            len(page_soup.find_all('span', class_= "special-price",)) ==\
-            len(page_soup.find_all('a', class_= "product-item-link",)) ==\
-            len(page_soup.find_all('a', class_= "product-item-link", href=True)) ==\
-            len(page_soup.find_all('img', class_= "product-image-photo")):
+        oldprice_array = np.array([])
+        specialprice_array = np.array([])
+        itemname_array = np.array([])
+        itemphoto_element_array = np.array([])
+        #productitemphoto = np.array([])
+        storename_array = np.array([])
+        df = pd.DataFrame()
+        #storenametemp = "string"
 
-            for price in page_soup.find_all('div', class_= "clearance-store-header__title",):
-                storenametemp = price.get_text('')
+        for url in urls:
+            headers = { 'User-Agent' : 'Mozilla/5.0 (Windows NT 6.1; Win64; x64)' }
+            request = urllib.request.Request(url, headers=headers)
+            response = urllib.request.urlopen(request)
+            page_html = response.read()
+            #time.sleep(0.5)
+            page_soup = soup(page_html, "html.parser")
 
-            for price in page_soup.find_all('span', class_= "old-price",):
-                #print(price.get_text('').strip('Was £'))
-                oldpricearray = np.append(oldpricearray, price.get_text('').strip('Was £'))
-                storename = np.append(storename, storenametemp)
-
-            for price in page_soup.find_all('span', class_= "special-price",):
-                #print(price.get_text('').strip('Now £'))
-                specialpricearray = np.append(specialpricearray, price.get_text('').strip('Now £'))
-
-            for price in page_soup.find_all('a', class_= "product-item-link",):
-                #print(price.get_text(''))
-                productitemname = np.append(productitemname, price.get_text(''))
-
-            for price in page_soup.find_all('a', class_= "product-item-link", href=True):
-                #print(price['href'])
-                productitemlink = np.append(productitemlink, price['href'])
-
-            for price in page_soup.find_all('img', class_= "product-image-photo"):
-                #print(path_to_image_html(price['src']))
-                productitemphoto = np.append(productitemphoto, path_to_image_html(price['src']))
+            for item in page_soup.find_all('div', class_= "col-xs-6 col-md-3 push-center search-item",):
+                
+                storename_temp = page_soup.title
+                storename_temp = storename_temp.get_text().replace(' Furniture Store - Barker & Stonehouse', '')
+                
+                itemname_element_temp = item.find('span', style="font-weight: bold;text-transform: none!important; font-size: 16px")
+                itemname_element_temp = itemname_element_temp.get_text()
+                
+                specialprice_element_temp = item.find('span', style="color:#ed1b24;font-family:GothamBold21010; font-size:18px;").contents[0]
+                specialprice_element_temp = specialprice_element_temp.get_text().strip('£')
+                
+                oldprice_element_temp = item.find('span', style="text-decoration: line-through; color: #aaa").contents[0]
+                oldprice_element_temp = oldprice_element_temp.get_text().strip('£')
+                
+                itemphoto_elements = item.find('img')
+                itemphoto_element_temp = itemphoto_elements['data-src']
+                itemphoto_element_temp = path_to_image_html(("https://www.barkerandstonehouseclearance.co.uk" + itemphoto_element_temp))
 
 
-        else:
-            print('Mismatch at ' + url)
+                #print(storename)
+                #print(itemname_element)    
+                #print(oldprice_element)
+                #print(specialprice_element)
+                #oldpricearray = np.append(oldpricearray, price.get_text('').strip('Was £'))
+                #storename = np.append(storename, storenametemp)
+                
+                #Appending operations
+                storename_array = np.append(storename_array, storename_temp)
+                itemname_array = np.append(itemname_array, itemname_element_temp)     
+                specialprice_array = np.append(specialprice_array, specialprice_element_temp)
+                oldprice_array = np.append(oldprice_array, oldprice_element_temp)
+                itemphoto_element_array = np.append(itemphoto_element_array, itemphoto_element_temp)
+        
 
-    print(storename.shape, productitemname.shape, oldpricearray.shape, specialpricearray.shape, productitemphoto.shape, productitemlink.shape)
-    #print(page_soup.prettify())
+        #dataarray = pd.concat([storename_array, itemname_array, specialprice_array, oldprice_array])
 
-    #dataarray =  pd.concat[storename, productitemname, oldpricearray, specialpricearray, productitemphoto, productitemlink]
+        list_of_files = glob.glob('./*.pkl')  # * means all if need specific format then *.pkl
+        latest_file = max(list_of_files, key=os.path.getctime)
+        #prev_df = pd.read_pickle(latest_file)
 
-    #list_of_files = glob.glob('C:/Users/Hamnah/PycharmProjects/pythonProject/*.pkl')  # * means all if need specific format then *.pkl
-    list_of_files = glob.glob('./*.pkl')  # * means all if need specific format then *.pkl
-    latest_file = max(list_of_files, key=os.path.getctime)
-    prev_df = pd.read_pickle(latest_file)
+        df['store'] = storename_array.tolist()
+        df['productitemname'] = itemname_array.tolist()
+        df['oldpricearray'] = oldprice_array.tolist()
+        df['specialpricearray'] = specialprice_array.tolist()
+        df['productitemlink'] = itemphoto_element_array.tolist()
+        df['indexcolumn'] = df['store'] + df['productitemname']
+        df = df.rename(columns={'store': 'Store', 'productitemname': 'Item Name', 'oldpricearray': 'Original Price', 'specialpricearray' : 'Reduced Price', 'productitemlink' : 'Item Photo'})
 
-    df = pd.DataFrame()
-    df['store'] = storename.tolist()
-    df['productitemname'] = productitemname.tolist()
-    df['oldpricearray'] = oldpricearray.tolist()
-    df['specialpricearray'] = specialpricearray.tolist()
-    df['productitemphoto'] = productitemphoto.tolist()
-    df['productitemlink'] = productitemlink.tolist()
-    df['indexcolumn'] = df['store'] + df['productitemname']
 
-    df = df.set_index('indexcolumn')
-    df.to_pickle('barkerstonehousedf' + datetime.now().strftime('%Y%m%d')+'.pkl')
+        df = df.set_index('indexcolumn')
+        df.to_pickle('barkerstonehousedf' + datetime.now().strftime('%Y%m%d')+'.pkl')
+
+        #print(storename_array.shape, itemname_array.shape, oldprice_array.shape, specialprice_array.shape)
+        #print(df.shape)
+
+
+
+
+        a= HTML(df.to_html(escape=False, columns = ['Store', 'Item Name', 'Original Price', 'Reduced Price', 'Item Photo'],
+                        col_space=120, index=False, show_dimensions=True, bold_rows=True ))
+        html = a.data
+        
+        boostrap_link = '<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css" integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm" crossorigin="anonymous">'
+        html = html.replace('class="dataframe"', 'class="table table-striped table-bordered table-hover table-sm table-dark"')
+
+        with open('index.html', 'w') as f:
+            f.write(html)
+        display(HTML(df.to_html(escape=False)))
+
+
+        text_file = open("index.html", "w")
+        text_file.write(boostrap_link + '\n' + html)
+        text_file.close()
+
+
+
+"""
+
+    a= HTML(df.to_html(escape=False))
+    html = a.data
+    with open('barkerstonehouse' + datetime.now().strftime('%Y%m%d') + '.html', 'w') as f:
+        f.write(html)
+    display(HTML(df.to_html(escape=False)))
+
+    a= HTML(df_compare_whatsnew.to_html(escape=False))
+    html = a.data
+    with open('whatsnewbarkerstonehouse' + datetime.now().strftime('%Y%m%d') + '.html', 'w') as f:
+        f.write(html)
+    display(HTML(df_compare_whatsnew.to_html(escape=False)))
+
+    a= HTML(df_compare_whatsgone.to_html(escape=False))
+    html = a.data
+    with open('whatsgonebarkerstonehouse' + datetime.now().strftime('%Y%m%d') + '.html', 'w') as f:
+        f.write(html)
+    display(HTML(df_compare_whatsgone.to_html(escape=False)))
+
+    a= HTML(df_chest.to_html(escape=False))
+    html = a.data
+    with open('chestbarkerstonehouse' + datetime.now().strftime('%Y%m%d') + '.html', 'w') as f:
+        f.write(html)
+    display(HTML(df_chest.to_html(escape=False)))
+
+    a= HTML(df_sofa.to_html(escape=False))
+    html = a.data
+    with open('sofabarkerstonehouse' + datetime.now().strftime('%Y%m%d') + '.html', 'w') as f:
+        f.write(html)
+    display(HTML(df_sofa.to_html(escape=False)))
+
 
     df_sofa = df[df['productitemname'].str.contains('sofa') | df['productitemname'].str.contains('Sofa')]
     df_chest = df[df['productitemname'].str.contains('chest') | df['productitemname'].str.contains('Chest')]
@@ -119,6 +178,7 @@ def main():
     #df_compare_whatsnew = df_compare_whatsnew.filter(like='False', axis=0)
     df_compare_whatsgone = prev_df.ne(df)
     #df_compare_whatsgone = df_compare_whatsgone.filter(like='False', axis=0)
+
 
     a= HTML(df.to_html(escape=False))
     html = a.data
@@ -155,6 +215,7 @@ def main():
     with open('sofabarkerstonehouse' + datetime.now().strftime('%Y%m%d') + '.html', 'w') as f:
         f.write(html)
     display(HTML(df_sofa.to_html(escape=False)))
+"""
 
 # Press the green button in the gutter to run the script.
 if __name__ == '__main__':
