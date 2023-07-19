@@ -8,6 +8,7 @@ import numpy as np
 import time
 import os
 import glob
+import jinja2
 from IPython.core.display import display,HTML
 
 def serverstart(PORT):
@@ -52,6 +53,7 @@ def main():
         #productitemphoto = np.array([])
         storename_array = np.array([])
         df = pd.DataFrame()
+        item_reduction_array = np.array([])
         #storenametemp = "string"
 
         for url in urls:
@@ -72,10 +74,28 @@ def main():
                 
                 specialprice_element_temp = item.find('span', style="color:#ed1b24;font-family:GothamBold21010; font-size:18px;").contents[0]
                 specialprice_element_temp = specialprice_element_temp.get_text().strip('£')
+
+                try:
+                    specialprice_element_temp = int(specialprice_element_temp)
+                except ValueError:
+                    print("NaN")
+                    specialprice_element_temp = oldprice_element_temp
                 
                 oldprice_element_temp = item.find('span', style="text-decoration: line-through; color: #aaa").contents[0]
                 oldprice_element_temp = oldprice_element_temp.get_text().strip('£')
+
+                try:
+                    oldprice_element_temp = int(oldprice_element_temp)
+                    if oldprice_element_temp == 0:
+                        oldprice_element_temp = 100
+                except ValueError:
+                    print("NaN")
+                    oldprice_element_temp = 100
+                    
                 
+
+                item_reduction = specialprice_element_temp / oldprice_element_temp
+
                 itemphoto_elements = item.find('img')
                 itemphoto_element_temp = itemphoto_elements['data-src']
                 itemphoto_element_temp = path_to_image_html(("https://www.barkerandstonehouseclearance.co.uk" + itemphoto_element_temp))
@@ -94,6 +114,7 @@ def main():
                 specialprice_array = np.append(specialprice_array, specialprice_element_temp)
                 oldprice_array = np.append(oldprice_array, oldprice_element_temp)
                 itemphoto_element_array = np.append(itemphoto_element_array, itemphoto_element_temp)
+                item_reduction_array = np.append(item_reduction_array, item_reduction)
         
 
         #dataarray = pd.concat([storename_array, itemname_array, specialprice_array, oldprice_array])
@@ -107,25 +128,29 @@ def main():
         df['oldpricearray'] = oldprice_array.tolist()
         df['specialpricearray'] = specialprice_array.tolist()
         df['productitemlink'] = itemphoto_element_array.tolist()
+        df['itemreduction'] = item_reduction_array.tolist()
         df['indexcolumn'] = df['store'] + df['productitemname']
-        df = df.rename(columns={'store': 'Store', 'productitemname': 'Item Name', 'oldpricearray': 'Original Price', 'specialpricearray' : 'Reduced Price', 'productitemlink' : 'Item Photo'})
+        df = df.rename(columns={'store': 'Store', 'productitemname': 'Item Name', 'oldpricearray': 'Original Price', 'specialpricearray' : 'Reduced Price', 'itemreduction' : 'Item Reduction' , 'productitemlink' : 'Item Photo'})
 
 
         df = df.set_index('indexcolumn')
         df.to_pickle('barkerstonehousedf' + datetime.now().strftime('%Y%m%d')+'.pkl')
+        df.sort_values(by='Item Reduction', ascending=True)
 
         #print(storename_array.shape, itemname_array.shape, oldprice_array.shape, specialprice_array.shape)
         #print(df.shape)
+        #df.style.set_table_attributes('class="table table-striped table-bordered table-hover table-sm table-dark data-filter-control"')
+        #df.style.set_table_styles('data-toggle="table"')
 
 
-
-
-        a= HTML(df.to_html(escape=False, columns = ['Store', 'Item Name', 'Original Price', 'Reduced Price', 'Item Photo'],
-                        col_space=120, index=False, show_dimensions=True, bold_rows=True ))
+        a= HTML(df.to_html(escape=False, columns = ['Store', 'Item Name', 'Original Price', 'Reduced Price', 'Item Reduction' , 'Item Photo'],
+                        col_space=120, index=False, show_dimensions=True, bold_rows=True, classes=["table table-striped table-bordered table-hover table-sm table-dark data-filter-control"], table_id='main_table' ))
         html = a.data
         
+        head = '<head>\n<link rel="stylesheet" href="styles.css">\n</head>\n'
         boostrap_link = '<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css" integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm" crossorigin="anonymous">'
-        html = html.replace('class="dataframe"', 'class="table table-striped table-bordered table-hover table-sm table-dark"')
+        bootstrap_link_2 = '<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.4/jquery.min.js"></script> \n<script src="./js/my.js"></script>\n'
+        bootstrap_link_3 = '<div class="container" data-bs-theme="dark"> \n <input type="text" id="myInput" onkeyup="myFunction()" placeholder="Search for items.." title="Type in a name"> \n </div> \n'
 
         with open('index.html', 'w') as f:
             f.write(html)
@@ -133,89 +158,10 @@ def main():
 
 
         text_file = open("index.html", "w")
-        text_file.write(boostrap_link + '\n' + html)
+        text_file.write(head + boostrap_link + '\n' + bootstrap_link_2  + bootstrap_link_3 + html)
         text_file.close()
 
 
-
-"""
-
-    a= HTML(df.to_html(escape=False))
-    html = a.data
-    with open('barkerstonehouse' + datetime.now().strftime('%Y%m%d') + '.html', 'w') as f:
-        f.write(html)
-    display(HTML(df.to_html(escape=False)))
-
-    a= HTML(df_compare_whatsnew.to_html(escape=False))
-    html = a.data
-    with open('whatsnewbarkerstonehouse' + datetime.now().strftime('%Y%m%d') + '.html', 'w') as f:
-        f.write(html)
-    display(HTML(df_compare_whatsnew.to_html(escape=False)))
-
-    a= HTML(df_compare_whatsgone.to_html(escape=False))
-    html = a.data
-    with open('whatsgonebarkerstonehouse' + datetime.now().strftime('%Y%m%d') + '.html', 'w') as f:
-        f.write(html)
-    display(HTML(df_compare_whatsgone.to_html(escape=False)))
-
-    a= HTML(df_chest.to_html(escape=False))
-    html = a.data
-    with open('chestbarkerstonehouse' + datetime.now().strftime('%Y%m%d') + '.html', 'w') as f:
-        f.write(html)
-    display(HTML(df_chest.to_html(escape=False)))
-
-    a= HTML(df_sofa.to_html(escape=False))
-    html = a.data
-    with open('sofabarkerstonehouse' + datetime.now().strftime('%Y%m%d') + '.html', 'w') as f:
-        f.write(html)
-    display(HTML(df_sofa.to_html(escape=False)))
-
-
-    df_sofa = df[df['productitemname'].str.contains('sofa') | df['productitemname'].str.contains('Sofa')]
-    df_chest = df[df['productitemname'].str.contains('chest') | df['productitemname'].str.contains('Chest')]
-
-    df_compare_whatsnew = df.ne(prev_df)
-    #df_compare_whatsnew = df_compare_whatsnew.filter(like='False', axis=0)
-    df_compare_whatsgone = prev_df.ne(df)
-    #df_compare_whatsgone = df_compare_whatsgone.filter(like='False', axis=0)
-
-
-    a= HTML(df.to_html(escape=False))
-    html = a.data
-    with open('barkerstonehouse' + datetime.now().strftime('%Y%m%d') + '.html', 'w') as f:
-        f.write(html)
-    display(HTML(df.to_html(escape=False)))
-
-    a= HTML(df.to_html(escape=False))
-    html = a.data
-    with open('index.html', 'w') as f:
-        f.write(html)
-    display(HTML(df.to_html(escape=False)))
-
-    a= HTML(df_compare_whatsnew.to_html(escape=False))
-    html = a.data
-    with open('whatsnewbarkerstonehouse' + datetime.now().strftime('%Y%m%d') + '.html', 'w') as f:
-        f.write(html)
-    display(HTML(df_compare_whatsnew.to_html(escape=False)))
-
-    a= HTML(df_compare_whatsgone.to_html(escape=False))
-    html = a.data
-    with open('whatsgonebarkerstonehouse' + datetime.now().strftime('%Y%m%d') + '.html', 'w') as f:
-        f.write(html)
-    display(HTML(df_compare_whatsgone.to_html(escape=False)))
-
-    a= HTML(df_chest.to_html(escape=False))
-    html = a.data
-    with open('chestbarkerstonehouse' + datetime.now().strftime('%Y%m%d') + '.html', 'w') as f:
-        f.write(html)
-    display(HTML(df_chest.to_html(escape=False)))
-
-    a= HTML(df_sofa.to_html(escape=False))
-    html = a.data
-    with open('sofabarkerstonehouse' + datetime.now().strftime('%Y%m%d') + '.html', 'w') as f:
-        f.write(html)
-    display(HTML(df_sofa.to_html(escape=False)))
-"""
 
 # Press the green button in the gutter to run the script.
 if __name__ == '__main__':
