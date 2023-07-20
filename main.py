@@ -119,7 +119,6 @@ def main():
                     col_space=120, index=False, show_dimensions=False, bold_rows=True, classes=["table table-striped table-bordered table-hover table-sm table-dark data-filter-control"], table_id='main_table' ))
     html = a.data
     
-    head = '<head>\n<link rel="stylesheet" href="styles.css">\n</head>\n'
     boostrap_link = '<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css" integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm" crossorigin="anonymous">'
     bootstrap_link_2 = '<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.4/jquery.min.js"></script> \n<script src="./js/my.js"></script>\n'
     bootstrap_link_3 = '<div class="container" data-bs-theme="dark"> \n <input type="text" id="myInput" onkeyup="myFunction()" placeholder="Search for items.." title="Type in a name"> \n </div> \n'
@@ -130,7 +129,7 @@ def main():
 
 
     text_file = open("index.html", "w")
-    text_file.write(head + boostrap_link + '\n' + bootstrap_link_2  + bootstrap_link_3 + html)
+    text_file.write( boostrap_link + '\n' + bootstrap_link_2  + bootstrap_link_3 + html)
     text_file.close()
     
 
