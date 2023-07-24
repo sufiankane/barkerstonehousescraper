@@ -1,6 +1,6 @@
 import urllib.request
 import threading
-from bs4 import BeautifulSoup as soup
+from bs4 import BeautifulSoup as soup, NavigableString, Tag
 from datetime import datetime
 import pandas as pd
 import numpy as np
@@ -8,7 +8,8 @@ import time
 import os
 import glob
 from app import urls #file storing the urls to webscrape
-from IPython.core.display import display,HTML
+from IPython.core.display import HTML
+import re
 
 
 '''def serverstart(PORT):
@@ -41,6 +42,7 @@ def main():
     storename_array = np.array([])
     df = pd.DataFrame()
     item_reduction_array = np.array([])
+    item_description_array = np.array([])
 
     main_url = "https://www.barkerandstonehouseclearance.co.uk"
 
@@ -61,22 +63,30 @@ def main():
             
             specialprice_element_temp = item.find('span', style="color:#ed1b24;font-family:GothamBold21010; font-size:18px;").contents[0]
             specialprice_element_temp = specialprice_element_temp.get_text().strip('£')
-            #specialprice_element_temp = int(specialprice_element_temp)
-
+            
             item_link = item.find('a')['href']
 
+            for br in item.findAll('br'):
+                next_s = br.nextSibling
+                if not (next_s and isinstance(next_s,NavigableString)):
+                    continue
+                next2_s = next_s.nextSibling
+                if next2_s and isinstance(next2_s,Tag) and next2_s.name == 'br':
+                    text = str(next_s).strip()
+                    if text:
+                        item_description = next_s
+
             try:
-                specialprice_element_temp = int(specialprice_element_temp)
+                specialprice_element_temp = int(''.join(re.findall(r'\d+', specialprice_element_temp)))
             except ValueError:
                 print("NaN")
                 specialprice_element_temp = oldprice_element_temp
             
             oldprice_element_temp = item.find('span', style="text-decoration: line-through; color: #aaa").contents[0]
             oldprice_element_temp = oldprice_element_temp.get_text().strip('£')
-            #oldprice_element_temp - int(oldprice_element_temp)
 
             try:
-                oldprice_element_temp = int(oldprice_element_temp)
+                oldprice_element_temp = int(''.join(re.findall(r'\d+', oldprice_element_temp)))
                 if oldprice_element_temp == 0:
                     oldprice_element_temp = 100
             except ValueError:
@@ -99,6 +109,7 @@ def main():
             oldprice_array = np.append(oldprice_array, oldprice_element_temp)
             itemphoto_element_array = np.append(itemphoto_element_array, itemphoto_element_temp)
             item_reduction_array = np.append(item_reduction_array, (1-item_reduction)*100)
+            item_description_array = np.append(item_description_array, item_description)
 
 
     #dataarray = pd.concat([storename_array, itemname_array, specialprice_array, oldprice_array])
@@ -114,16 +125,17 @@ def main():
     df['productitemlink'] = itemphoto_element_array.tolist()
     df['itemreduction'] = item_reduction_array.round(1).tolist()
     df['itemreduction'] = df['itemreduction'].astype(str) + '%'
+    df['itemdescription'] = item_description_array.tolist()
     df['indexcolumn'] = df['store'] + df['productitemname']
-    df = df.rename(columns={'store': 'Store', 'productitemname': 'Item Name', 'oldpricearray': 'Original Price', 'specialpricearray' : 'Reduced Price', 'itemreduction' : 'Item Reduction' , 'productitemlink' : 'Item Photo'})
+    df = df.rename(columns={'store': 'Store', 'productitemname': 'Range Name', 'itemdescription' : 'Item Description', 'oldpricearray': 'Original Price', 'specialpricearray' : 'Reduced Price', 'itemreduction' : 'Item Reduction' , 'productitemlink' : 'Item Photo'})
 
 
     df = df.set_index('indexcolumn')
     #df.to_pickle('barkerstonehousedf' + datetime.now().strftime('%Y%m%d')+'.pkl')
     df.sort_values(by='Item Reduction', ascending=True)
 
-    a = df.to_html(escape=False, columns = ['Store', 'Item Name', 'Original Price', 'Reduced Price', 'Item Reduction' , 'Item Photo'],
-                    col_space=120, index=False, show_dimensions=False, bold_rows=True, classes=["table table-striped table-bordered table-hover table-sm table-dark data-filter-control"], table_id='main_table' )
+    a = df.to_html(escape=False, columns = ['Store', 'Range Name', 'Item Description' , 'Original Price', 'Reduced Price', 'Item Reduction' , 'Item Photo'],
+                    col_space=120, index=False, show_dimensions=False, bold_rows=True, classes=["table table-striped table-bordered table-hover table-sm table-dark data-filter-control text-center"], table_id='main_table' )
 
     return a
 '''
