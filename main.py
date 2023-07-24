@@ -23,7 +23,7 @@ from IPython.core.display import display,HTML
 '''
 
 def path_to_image_html(main_url, item_link, path, size):
-    return '<a href="%s"><img src="%s" width="%d"><\a>' % (main_url + item_link, main_url + path, size)
+    return '<a href="%s"><img src="%s" width="%d"></a>' % (main_url + item_link, main_url + path, size)
 
 
 def main():
@@ -49,7 +49,6 @@ def main():
         request = urllib.request.Request(url, headers=headers)
         response = urllib.request.urlopen(request)
         page_html = response.read()
-        #time.sleep(0.5)
         page_soup = soup(page_html, "html.parser")
 
         for item in page_soup.find_all('div', class_= "col-xs-6 col-md-3 push-center search-item",):
