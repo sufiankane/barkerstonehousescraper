@@ -23,17 +23,13 @@ import re
         httpd.serve_forever()
 '''
 
-def path_to_image_html(main_url, item_link, path, size):
-    return '<a href="%s"><img src="%s" width="%d"></a>' % (main_url + item_link, main_url + path, size)
+def path_to_image_html(main_url, item_link, path, size, alt):
+    return '<a href="%s"><img src="%s" width="%d" alt="%s"></a>' % (main_url + item_link, main_url + path, size, alt)
 
 
 def main():
     #t1 = threading.Thread(target=serverstart, args=(8080,))
     #t1.start()
-
-
-
-        #time.sleep(86400)
 
     oldprice_array = np.array([])
     specialprice_array = np.array([])
@@ -43,6 +39,7 @@ def main():
     df = pd.DataFrame()
     item_reduction_array = np.array([])
     item_description_array = np.array([])
+    img_alt_text_array = np.array([])
 
     main_url = "https://www.barkerandstonehouseclearance.co.uk"
 
@@ -92,14 +89,15 @@ def main():
             except ValueError:
                 print("NaN")
                 oldprice_element_temp = 100
-                
-            
+
+            image_alt_text_temp = storename_temp + " - " + item_description
 
             item_reduction = specialprice_element_temp / oldprice_element_temp
 
             itemphoto_elements = item.find('img')
             itemphoto_element_temp = itemphoto_elements['data-src']
-            itemphoto_element_temp = path_to_image_html(main_url, item_link, itemphoto_element_temp, 120)
+            itemphoto_element_temp = path_to_image_html(main_url, item_link, itemphoto_element_temp, 120, image_alt_text_temp)
+
 
 
             #Appending operations
@@ -110,6 +108,7 @@ def main():
             itemphoto_element_array = np.append(itemphoto_element_array, itemphoto_element_temp)
             item_reduction_array = np.append(item_reduction_array, (1-item_reduction)*100)
             item_description_array = np.append(item_description_array, item_description)
+            img_alt_text_array = np.append(img_alt_text_array, image_alt_text_temp)
 
 
     #dataarray = pd.concat([storename_array, itemname_array, specialprice_array, oldprice_array])
@@ -126,8 +125,12 @@ def main():
     df['itemreduction'] = item_reduction_array.round(1).tolist()
     df['itemreduction'] = df['itemreduction'].astype(str) + '%'
     df['itemdescription'] = item_description_array.tolist()
+    df['imagealttext'] = img_alt_text_array.tolist()
     df['indexcolumn'] = df['store'] + df['productitemname']
-    df = df.rename(columns={'store': 'Store', 'productitemname': 'Range Name', 'itemdescription' : 'Item Description', 'oldpricearray': 'Original Price', 'specialpricearray' : 'Reduced Price', 'itemreduction' : 'Item Reduction' , 'productitemlink' : 'Item Photo'})
+    df = df.rename(columns={'store': 'Store', 'productitemname': 'Range Name', 
+                            'itemdescription' : 'Item Description', 'oldpricearray': 'Original Price',
+                              'specialpricearray' : 'Reduced Price', 'itemreduction' : 'Item Reduction' , 
+                              'productitemlink' : 'Item Photo', 'imagealttext' : 'Alt Text'})
 
 
     df = df.set_index('indexcolumn')
